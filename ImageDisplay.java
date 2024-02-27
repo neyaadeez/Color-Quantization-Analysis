@@ -38,7 +38,7 @@ public class ImageDisplay {
 			{
 				for(int x = 0; x < width; x++)
 				{
-					byte a = 0;
+					// byte a = 0;
 					byte r = bytes[ind];
 					byte g = bytes[ind+height*width];
 					byte b = bytes[ind+height*width*2]; 
@@ -49,6 +49,7 @@ public class ImageDisplay {
 					ind++;
 				}
 			}
+            raf.close();
 		}
 		catch (FileNotFoundException e) 
 		{
@@ -60,7 +61,7 @@ public class ImageDisplay {
 		}
 	}
 
-    public static BufferedImage quantizeImage(BufferedImage originalImage, int totalBuckets) {
+    public static BufferedImage quantizeImage(int quantizationMode, BufferedImage originalImage, int totalBuckets) {
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
         BufferedImage quantizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -139,7 +140,7 @@ public class ImageDisplay {
 
         int quantizationMode = Integer.parseInt(args[1]);
         int numberOfBuckets = Integer.parseInt(args[2]);
-        BufferedImage quantizedImg = quantizeImage(imgOne, numberOfBuckets);
+        BufferedImage quantizedImg = quantizeImage(quantizationMode, imgOne, numberOfBuckets);
         System.out.println(calculateAbsoluteError(imgOne, quantizedImg));
 
 		lbIm1 = new JLabel(new ImageIcon(quantizedImg));
