@@ -65,12 +65,13 @@ public class Sample {
 	public static BufferedImage nonUniformQuantizeImage(BufferedImage originalImage, int totalBuckets) {
 		int n = (int) Math.round(Math.pow(totalBuckets, 1.0 / 3.0));
 		int bucketSize = n;
+        // System.out.println("bukctSize: "+bucketSize);
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
         BufferedImage quantizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
         // Iterate over each pixel and calculate the histogram for each channel
-        int[][][] histogram = new int[256][256][256]; // Histogram for each channel
+        int[][] histogram = new int[3][256]; // Histogram for each channel
 
         // Calculate histogram
         for (int y = 0; y < height; y++) {
@@ -79,9 +80,9 @@ public class Sample {
                 int r = (rgb >> 16) & 0xFF;
                 int g = (rgb >> 8) & 0xFF;
                 int b = rgb & 0xFF;
-				histogram[r][0][0]++;
-				histogram[0][g][0]++;
-				histogram[0][0][b]++;
+				histogram[0][r]++;
+				histogram[1][g]++;
+				histogram[2][b]++;
             }
         }
 		// for(int i=0; i<256; i++){
@@ -118,43 +119,66 @@ public class Sample {
         return quantizedImage;
     }
 
-	public static int[][] calculateBucketSizesAndRepresentatives(int[][][] histogram, int channel, int totalBuckets) {
+	public static int[][] calculateBucketSizesAndRepresentatives(int[][] histogram, int channel, int totalBuckets) {
         int[][] bucketSizesAndRepresentatives = new int[totalBuckets][2];
-
+    
         // Calculate total pixel count for the given channel
         int totalPixels = 0;
-        // for (int r = 0; r < 256; r++) {
-        //     for (int g = 0; g < 256; g++) {
-        //         for (int b = 0; b < 256; b++) {
-        //             totalPixels += histogram[r][g][b];
-        //         }
-        //     }
-        // }
-		for(int i=0; i<256; i++){
-			totalPixels += histogram[channel == 0 ? i : 0][channel == 1 ? i : 0][channel == 2 ? i : 0];
-		}
-		System.out.println("totalPix: "+ totalPixels);
-		System.out.println("totalBuckets: "+ totalBuckets);
-
-        // Calculate bucket sizes and representative colors based on pixel distribution in the given channel
-        int pixelsInBucket = 0;
-        int bucketIndex = 0;
-        int bucketSum = 0;
         for (int i = 0; i < 256; i++) {
-            pixelsInBucket += histogram[channel == 0 ? i : 0][channel == 1 ? i : 0][channel == 2 ? i : 0];
-            if ((pixelsInBucket > totalPixels / totalBuckets)) {
-				System.out.println("pixbuck: "+pixelsInBucket);
-                bucketSizesAndRepresentatives[bucketIndex][0] = i; // Bucket size
-                bucketSizesAndRepresentatives[bucketIndex][1] = bucketSum / pixelsInBucket; // Representative color
-                bucketIndex++;
-                pixelsInBucket = 0;
-                bucketSum = 0;
-            }
-            bucketSum += (histogram[channel == 0 ? i : 0][channel == 1 ? i : 0][channel == 2 ? i : 0] * i);
+            totalPixels += histogram[channel][i];
+            // System.out.println(i+" histogram: "+histogram[channel][i]);
         }
+    
+        // Calculate the target size for each bucket
+        int targetSize = totalPixels / totalBuckets;
 
+        System.out.println("totalPixels: "+totalPixels);
+        System.out.println("targetSize: "+targetSize);
+    
+        // Flag to indicate whether to overshoot or undershoot the target size
+        boolean overshoot = true;
+    
+        // Variables to track the current bucket and size
+        int currentBucket = 0;
+        int currentSize = 0;
+        int currentBucketSum = 0;
+    
+        for (int i = 0; i < 256; i++) {
+            int count = histogram[channel][i];
+            
+            // Check if adding the current value would overshoot or undershoot the target size
+            if ((overshoot && currentSize + count > targetSize) || (!overshoot && currentSize + count > targetSize)) {
+                // Calculate the representative color for the current bucket
+                int representativeColor;
+                if(currentSize != 0)
+                    representativeColor = currentBucketSum / currentSize;
+                else
+                    representativeColor = 0;
+                bucketSizesAndRepresentatives[currentBucket][0] = i - (overshoot ? 1 : 0); // Bucket size
+                bucketSizesAndRepresentatives[currentBucket][1] = representativeColor; // Representative color
+                System.out.println(i+" : I am in: "+representativeColor+" :current buckt:"+ currentBucket+" :curentSize:  "+currentSize);
+                currentBucket++;
+                currentSize = 0;
+                currentBucketSum = 0;
+                overshoot = !overshoot;
+    
+                // Check if all buckets are filled
+                if (currentBucket >= totalBuckets) {
+                    break;
+                }
+            }
+    
+            // Update current size and accumulate color sum
+            currentSize += count;
+            currentBucketSum += count * i;
+            // System.out.println("current bucket sum: " +currentBucketSum+" : crrentSize:"+currentSize+" :Count: "+count);
+        }
+        for(int i=0; i<totalBuckets; i++){
+            System.out.println(i+": "+bucketSizesAndRepresentatives[i][0]+" W: "+bucketSizesAndRepresentatives[i][1]);
+        }
         return bucketSizesAndRepresentatives;
     }
+    
 
 	public static int findBucketIndex(int value, int[][] bucketSizesAndRepresentatives) {
 		int index = 0;

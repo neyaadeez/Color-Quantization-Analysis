@@ -142,15 +142,20 @@ public class ImageDisplay {
         int bucketSum = 0;
         for (int i = 0; i < 256; i++) {
             pixelsInBucket += histogram[channel == 0 ? i : 0][channel == 1 ? i : 0][channel == 2 ? i : 0];
+            System.out.println("imp: "+pixelsInBucket);
             if ((pixelsInBucket > totalPixels / totalBuckets)) {
 				System.out.println("pixbuck: "+pixelsInBucket);
                 bucketSizesAndRepresentatives[bucketIndex][0] = i; // Bucket size
                 bucketSizesAndRepresentatives[bucketIndex][1] = bucketSum / pixelsInBucket; // Representative color
+                System.out.println(i+" : I am in: "+(bucketSum/pixelsInBucket)+" :current buckt:"+ bucketIndex+" :curentSize:  "+pixelsInBucket);
                 bucketIndex++;
                 pixelsInBucket = 0;
                 bucketSum = 0;
             }
             bucketSum += (histogram[channel == 0 ? i : 0][channel == 1 ? i : 0][channel == 2 ? i : 0] * i);
+        }
+        for(int i=0; i<totalBuckets; i++){
+            System.out.println(i+": "+bucketSizesAndRepresentatives[i][0]+" W: "+bucketSizesAndRepresentatives[i][1]);
         }
 
         return bucketSizesAndRepresentatives;
