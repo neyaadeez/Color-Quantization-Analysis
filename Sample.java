@@ -4,7 +4,7 @@ import java.io.*;
 import javax.swing.*;
 
 
-public class ImageDisplay {
+public class Sample {
 
 	JFrame frame, frame2;
 	JLabel lbIm1, lbIm2;
@@ -282,7 +282,7 @@ public class ImageDisplay {
 	}
 
 	public static void main(String[] args) {
-		ImageDisplay ren = new ImageDisplay();
+		Sample ren = new Sample();
 		ren.showIms(args);
 	}
 
