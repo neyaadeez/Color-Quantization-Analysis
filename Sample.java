@@ -126,63 +126,47 @@ public class Sample {
 	public static int[][] calculateBucketSizesAndRepresentatives(int[][] histogram, int channel, int totalBuckets) {
         int[][] bucketSizesAndRepresentatives = new int[totalBuckets][2];
     
-        // Calculate total pixel count for the given channel
+        // Calculate total pixel count and initialize variables
         int totalPixels = 0;
         for (int i = 0; i < 256; i++) {
             totalPixels += histogram[channel][i];
-            // System.out.println(i+" histogram: "+histogram[channel][i]);
         }
-    
-        // Calculate the target size for each bucket
         int targetSize = totalPixels / totalBuckets;
-        // System.out.println("BucketSize: "+totalBuckets);
-        // System.out.println("totalPixels: "+totalPixels);
-        // System.out.println("targetSize: "+targetSize);
-    
-        // Flag to indicate whether to overshoot or undershoot the target size
         boolean overshoot = true;
-    
-        // Variables to track the current bucket and size
         int currentBucket = 0;
         int currentSize = 0;
         int currentBucketSum = 0;
     
         for (int i = 0; i < 256; i++) {
             int count = histogram[channel][i];
-            // System.out.println(i+ "histo: "+histogram[channel][i]);
-            
-            // Check if adding the current value would overshoot or undershoot the target size
-            if ((overshoot && currentSize + count > targetSize) || (!overshoot && currentSize + count > targetSize)) {
-                // Calculate the representative color for the current bucket
-                int representativeColor;
-                if(currentSize != 0)
-                    representativeColor = currentBucketSum / currentSize;
-                else
-                    representativeColor = 0;
-                bucketSizesAndRepresentatives[currentBucket][0] = i - (overshoot ? 1 : 0); // Bucket size
-                bucketSizesAndRepresentatives[currentBucket][1] = representativeColor; // Representative color
-                // System.out.println(i+" : I am in: "+representativeColor+" :current buckt:"+ currentBucket+" :curentSize:  "+currentSize);
-                currentBucket++;
-                currentSize = 0;
-                currentBucketSum = 0;
-                overshoot = !overshoot;
     
-                // Check if all buckets are filled
-                if (currentBucket >= totalBuckets) {
-                    break;
-                }
+            // Check if adding current value would exceed target
+            if (currentSize + count > targetSize && currentBucket < totalBuckets) {
+                // Calculate representative color (handle empty bucket case)
+                int representativeColor = currentSize == 0 ? i : currentBucketSum / currentSize;
+                bucketSizesAndRepresentatives[currentBucket][0] = i - (overshoot ? 1 : 0);
+                bucketSizesAndRepresentatives[currentBucket][1] = representativeColor;
+                currentBucket++;
+                currentSize = count;
+                currentBucketSum = count * i;
+                overshoot = !overshoot;
+            } else {
+                // Update current size and sum if below target
+                currentSize += count;
+                currentBucketSum += count * i;
             }
     
-            // Update current size and accumulate color sum
-            currentSize += count;
-            currentBucketSum += count * i;
-            // System.out.println("current bucket sum: " +currentBucketSum+" : crrentSize:"+currentSize+" :Count: "+count);
+            // Fill the last bucket even if it doesn't reach target size
+            if (i == 255 && currentBucket < totalBuckets - 1) {
+                bucketSizesAndRepresentatives[currentBucket][0] = 255 - (overshoot ? 1 : 0);
+                bucketSizesAndRepresentatives[currentBucket][1] = currentSize == 0 ? 255 : currentBucketSum / currentSize;
+                currentBucket++;
+            }
         }
-        // for(int i=0; i<totalBuckets; i++){
-        //     System.out.println(i+": "+bucketSizesAndRepresentatives[i][0]+" W: "+bucketSizesAndRepresentatives[i][1]);
-        // }
+    
         return bucketSizesAndRepresentatives;
     }
+    
     
 
 	public static int findBucketIndex(int value, int[][] bucketSizesAndRepresentatives) {
