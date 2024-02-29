@@ -106,11 +106,13 @@ public class Sample {
                 int bucketIndexR = findBucketIndex(r, bucketSizesAndRepresentativesR);
                 int bucketIndexG = findBucketIndex(g, bucketSizesAndRepresentativesG);
                 int bucketIndexB = findBucketIndex(b, bucketSizesAndRepresentativesB);
+                
 
                 // Combine channels
-                int quantizedRGB = (bucketSizesAndRepresentativesR[bucketIndexR][1] << 16) |
-                                   (bucketSizesAndRepresentativesG[bucketIndexG][1] << 8) |
-                                   bucketSizesAndRepresentativesB[bucketIndexB][1];
+                int quantizedRGB = (r == 0 ? 0: (bucketSizesAndRepresentativesR[bucketIndexR][1] << 16)) |
+                                   (g == 0 ? 0: (bucketSizesAndRepresentativesG[bucketIndexG][1] << 8)) |
+                                   (b == 0 ? 0: (bucketSizesAndRepresentativesB[bucketIndexB][1]));
+                
 
                 quantizedImage.setRGB(x, y, quantizedRGB);
             }
@@ -131,7 +133,7 @@ public class Sample {
     
         // Calculate the target size for each bucket
         int targetSize = totalPixels / totalBuckets;
-
+        System.out.println("BucketSize: "+totalBuckets);
         System.out.println("totalPixels: "+totalPixels);
         System.out.println("targetSize: "+targetSize);
     
@@ -145,6 +147,7 @@ public class Sample {
     
         for (int i = 0; i < 256; i++) {
             int count = histogram[channel][i];
+            System.out.println(i+ "histo: "+histogram[channel][i]);
             
             // Check if adding the current value would overshoot or undershoot the target size
             if ((overshoot && currentSize + count > targetSize) || (!overshoot && currentSize + count > targetSize)) {
