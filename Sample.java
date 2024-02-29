@@ -1,6 +1,8 @@
 import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
+import java.text.DecimalFormat;
+
 import javax.swing.*;
 
 
@@ -133,9 +135,9 @@ public class Sample {
     
         // Calculate the target size for each bucket
         int targetSize = totalPixels / totalBuckets;
-        System.out.println("BucketSize: "+totalBuckets);
-        System.out.println("totalPixels: "+totalPixels);
-        System.out.println("targetSize: "+targetSize);
+        // System.out.println("BucketSize: "+totalBuckets);
+        // System.out.println("totalPixels: "+totalPixels);
+        // System.out.println("targetSize: "+targetSize);
     
         // Flag to indicate whether to overshoot or undershoot the target size
         boolean overshoot = true;
@@ -147,7 +149,7 @@ public class Sample {
     
         for (int i = 0; i < 256; i++) {
             int count = histogram[channel][i];
-            System.out.println(i+ "histo: "+histogram[channel][i]);
+            // System.out.println(i+ "histo: "+histogram[channel][i]);
             
             // Check if adding the current value would overshoot or undershoot the target size
             if ((overshoot && currentSize + count > targetSize) || (!overshoot && currentSize + count > targetSize)) {
@@ -159,7 +161,7 @@ public class Sample {
                     representativeColor = 0;
                 bucketSizesAndRepresentatives[currentBucket][0] = i - (overshoot ? 1 : 0); // Bucket size
                 bucketSizesAndRepresentatives[currentBucket][1] = representativeColor; // Representative color
-                System.out.println(i+" : I am in: "+representativeColor+" :current buckt:"+ currentBucket+" :curentSize:  "+currentSize);
+                // System.out.println(i+" : I am in: "+representativeColor+" :current buckt:"+ currentBucket+" :curentSize:  "+currentSize);
                 currentBucket++;
                 currentSize = 0;
                 currentBucketSum = 0;
@@ -176,9 +178,9 @@ public class Sample {
             currentBucketSum += count * i;
             // System.out.println("current bucket sum: " +currentBucketSum+" : crrentSize:"+currentSize+" :Count: "+count);
         }
-        for(int i=0; i<totalBuckets; i++){
-            System.out.println(i+": "+bucketSizesAndRepresentatives[i][0]+" W: "+bucketSizesAndRepresentatives[i][1]);
-        }
+        // for(int i=0; i<totalBuckets; i++){
+        //     System.out.println(i+": "+bucketSizesAndRepresentatives[i][0]+" W: "+bucketSizesAndRepresentatives[i][1]);
+        // }
         return bucketSizesAndRepresentatives;
     }
     
@@ -278,6 +280,15 @@ public class Sample {
         BufferedImage quantizedImg = quantizeImage(quantizationMode, imgOne, numberOfBuckets);
 
 		BufferedImage nonUni = nonUniformQuantizeImage(imgOne, numberOfBuckets);
+        DecimalFormat numberFormat = new DecimalFormat("#.00");
+
+        for(int i = 0; i<256; i++){
+            int colors = (int)Math.pow(i+1, 3);
+            BufferedImage m1 = quantizeImage(quantizationMode, imgOne, colors);
+            BufferedImage m2 = nonUniformQuantizeImage(imgOne, colors);
+            System.out.println(colors+": uniform     -> "+numberFormat.format(calculateAbsoluteError(imgOne, m1)));
+            System.out.println(colors+": non-uniform -> "+numberFormat.format(calculateAbsoluteError(imgOne, m2)));
+        }
 		System.out.println("Uniform: "+calculateAbsoluteError(imgOne, quantizedImg));
         System.out.println("non-Uniform: "+calculateAbsoluteError(imgOne, nonUni));
 
