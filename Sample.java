@@ -266,13 +266,13 @@ public class Sample {
 		BufferedImage nonUni = nonUniformQuantizeImage(imgOne, numberOfBuckets);
         DecimalFormat numberFormat = new DecimalFormat("#.00");
 
-        for(int i = 0; i<256; i++){
-            int colors = (int)Math.pow(i+1, 3);
-            BufferedImage m1 = quantizeImage(quantizationMode, imgOne, colors);
-            BufferedImage m2 = nonUniformQuantizeImage(imgOne, colors);
-            System.out.println(colors+": uniform     -> "+numberFormat.format(calculateAbsoluteError(imgOne, m1)));
-            System.out.println(colors+": non-uniform -> "+numberFormat.format(calculateAbsoluteError(imgOne, m2)));
-        }
+        // for(int i = 0; i<256; i++){
+        //     int colors = (int)Math.pow(i+1, 3);
+        //     BufferedImage m1 = quantizeImage(quantizationMode, imgOne, colors);
+        //     BufferedImage m2 = nonUniformQuantizeImage(imgOne, colors);
+        //     System.out.println(colors+": uniform     -> "+numberFormat.format(calculateAbsoluteError(imgOne, m1)));
+        //     System.out.println(colors+": non-uniform -> "+numberFormat.format(calculateAbsoluteError(imgOne, m2)));
+        // }
 		System.out.println("Uniform: "+calculateAbsoluteError(imgOne, quantizedImg));
         System.out.println("non-Uniform: "+calculateAbsoluteError(imgOne, nonUni));
 
@@ -290,18 +290,30 @@ public class Sample {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 0;
 		c.gridy = 1;
-		frame.getContentPane().add(lbIm1, c);
+		// frame.getContentPane().add(lbIm1, c);
+        frame.getContentPane().add(createHeaderPanel("Uniform Quantization", lbIm1), c);
+
 
 		frame.pack();
 		frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+		// frame2.getContentPane().add(lbIm2, c);
+        frame2.getContentPane().add(createHeaderPanel("Non-Uniform Quantization", lbIm2), c);
 
-		frame2.getContentPane().add(lbIm2, c);
 
 		frame2.pack();
 		frame2.setVisible(true);
         frame2.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
+    private static JPanel createHeaderPanel(String headerText, JLabel contentLabel) {
+        JPanel panel = new JPanel(new BorderLayout());
+        JLabel headerLabel = new JLabel(headerText);
+        headerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        panel.add(headerLabel, BorderLayout.NORTH);
+        panel.add(contentLabel, BorderLayout.CENTER);
+        return panel;
+    }
 
 	public static void main(String[] args) {
 		Sample ren = new Sample();
