@@ -172,7 +172,7 @@ public class Sample {
 	public static int findBucketIndex(int value, int[][] bucketSizesAndRepresentatives) {
 		int index = 0;
 		// Find the bucket index where the value falls
-		while (index < bucketSizesAndRepresentatives.length && value >= bucketSizesAndRepresentatives[index][0]) {
+		while (index < bucketSizesAndRepresentatives.length && value > bucketSizesAndRepresentatives[index][0]) {
 			index++;
 		}
 		// Adjust index to ensure it's within bounds
@@ -189,6 +189,8 @@ public class Sample {
         int n = (int) Math.round(Math.pow(totalBuckets, 1.0 / 3.0));
         int bucketSize = 256 / n;
 
+        int[][] bucketSizesAndRepresentatives = calculateBucketSizesAndRepresentatives0(n);
+
         // Quantize each pixel
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -198,12 +200,35 @@ public class Sample {
                 int b = rgb & 0xFF;
 
                 // Quantize each channel
-                int quantizedR = (r / bucketSize) * bucketSize + bucketSize / 2;
-                int quantizedG = (g / bucketSize) * bucketSize + bucketSize / 2;
-                int quantizedB = (b / bucketSize) * bucketSize + bucketSize / 2;
+                // int quantizedR = (r / bucketSize) * bucketSize + bucketSize / 2;
+                // int quantizedG = (g / bucketSize) * bucketSize + bucketSize / 2;
+                // int quantizedB = (b / bucketSize) * bucketSize + bucketSize / 2;
+                // int bucketIndexR = findBucketIndex0(r, bucketSizesAndRepresentatives);
+                // int bucketIndexG = findBucketIndex0(g, bucketSizesAndRepresentatives);
+                // int bucketIndexB = findBucketIndex0(b, bucketSizesAndRepresentatives);
 
+
+
+                // // Combine channels
+                // // int quantizedRGB = (quantizedR << 16) | (quantizedG << 8) | quantizedB;
+
+                // int quantizedRGB = (r == 0 ? 0: (bucketSizesAndRepresentatives[bucketIndexR][1] << 16)) |
+                //                    (g == 0 ? 0: (bucketSizesAndRepresentatives[bucketIndexG][1] << 8)) |
+                //                    (b == 0 ? 0: (bucketSizesAndRepresentatives[bucketIndexB][1]));
+                
+
+                int bucketIndexR = findBucketIndex0(r, bucketSizesAndRepresentatives);
+                int bucketIndexG = findBucketIndex0(g, bucketSizesAndRepresentatives);
+                int bucketIndexB = findBucketIndex0(b, bucketSizesAndRepresentatives);
+    
+                // Retrieve representative values from the bucketSizesAndRepresentatives array
+                int quantizedR = bucketSizesAndRepresentatives[bucketIndexR][1];
+                int quantizedG = bucketSizesAndRepresentatives[bucketIndexG][1];
+                int quantizedB = bucketSizesAndRepresentatives[bucketIndexB][1];
+    
                 // Combine channels
                 int quantizedRGB = (quantizedR << 16) | (quantizedG << 8) | quantizedB;
+    
 
                 quantizedImage.setRGB(x, y, quantizedRGB);
             }
@@ -212,10 +237,50 @@ public class Sample {
         return quantizedImage;
     }
 
+    public static int[][] calculateBucketSizesAndRepresentatives0(int totalBuckets) {
+        int[][] colorAndRepresentatives = new int[totalBuckets][2];
+        int bucketSize = Math.round(256.0f / totalBuckets);
+        for (int i = 0; i < totalBuckets; i++) {
+                // Calculate the boundary values for the bucket
+                int startValue = i * bucketSize;
+                int endValue = startValue + bucketSize - 1; // Subtract 1 to avoid overlapping with the next bucket
+        
+                // Assign the boundary values and representative color
+                colorAndRepresentatives[i][0] = endValue; // Bucket size (boundary value)
+                colorAndRepresentatives[i][1] = (startValue + endValue) / 2; // Representative color
+
+
+            // colorAndRepresentatives[i][0] = bucketSize; // Bucket size
+            // colorAndRepresentatives[i][1] = bucketSize * (i + 1) - bucketSize / 2; // Representative
+            if(bucketSize * (i) - bucketSize /2  >= 256){
+                break;
+            }
+            System.out.println("Bucket size: " + colorAndRepresentatives[i][0]);
+            System.out.println("Representative: " + colorAndRepresentatives[i][1]);
+        }
+        return colorAndRepresentatives;
+    }
+    
+    public static int findBucketIndex0(int value, int[][] bucketSizesAndRepresentatives) {
+        int index = 0;
+        // Find the bucket index where the value falls
+        while (index < bucketSizesAndRepresentatives.length && value > bucketSizesAndRepresentatives[index][0]) {
+            index++;
+        }
+        // Adjust index to ensure it's within bounds
+        return Math.min(index, bucketSizesAndRepresentatives.length - 1);
+    }
+    
+    
+
+
     public static double calculateAbsoluteError(BufferedImage originalImage, BufferedImage quantizedImage) {
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
         double totalError = 0;
+        double errrorR = 0;
+        double errrorG = 0;
+        double errrorB = 0;
 
         // Calculate absolute error for each pixel
         for (int y = 0; y < height; y++) {
@@ -239,8 +304,15 @@ public class Sample {
 
                 // Calculate total absolute error
                 totalError += errorR + errorG + errorB;
+                errrorR += errorR;
+                errrorG += errorG;
+                errrorB += errorB;
             }
         }
+
+        System.out.println("errorR: "+errrorR);
+        System.out.println("errorG: "+errrorG);
+        System.out.println("errorB: "+errrorB);
 
         // Normalize absolute error by the number of pixels and channels
         return totalError / (width * height * 3);
