@@ -189,7 +189,7 @@ public class Sample {
         int n = (int) Math.round(Math.pow(totalBuckets, 1.0 / 3.0));
         int bucketSize = 256 / n;
 
-        int[][] bucketSizesAndRepresentatives = calculateBucketSizesAndRepresentatives0(n);
+        double[][] bucketSizesAndRepresentatives = calculateBucketSizesAndRepresentatives0(n);
 
         // Quantize each pixel
         for (int y = 0; y < height; y++) {
@@ -222,9 +222,9 @@ public class Sample {
                 int bucketIndexB = findBucketIndex0(b, bucketSizesAndRepresentatives);
     
                 // Retrieve representative values from the bucketSizesAndRepresentatives array
-                int quantizedR = bucketSizesAndRepresentatives[bucketIndexR][1];
-                int quantizedG = bucketSizesAndRepresentatives[bucketIndexG][1];
-                int quantizedB = bucketSizesAndRepresentatives[bucketIndexB][1];
+                int quantizedR = (int)bucketSizesAndRepresentatives[bucketIndexR][1];
+                int quantizedG = (int)bucketSizesAndRepresentatives[bucketIndexG][1];
+                int quantizedB = (int)bucketSizesAndRepresentatives[bucketIndexB][1];
     
                 // Combine channels
                 int quantizedRGB = (quantizedR << 16) | (quantizedG << 8) | quantizedB;
@@ -237,31 +237,61 @@ public class Sample {
         return quantizedImage;
     }
 
-    public static int[][] calculateBucketSizesAndRepresentatives0(int totalBuckets) {
-        int[][] colorAndRepresentatives = new int[totalBuckets][2];
-        int bucketSize = Math.round(256.0f / totalBuckets);
+    public static double[][] calculateBucketSizesAndRepresentatives0(int totalBuckets) {
+        double[][] colorAndRepresentatives = new double[totalBuckets][2];
+    
         for (int i = 0; i < totalBuckets; i++) {
-                // Calculate the boundary values for the bucket
-                int startValue = i * bucketSize;
-                int endValue = startValue + bucketSize - 1; // Subtract 1 to avoid overlapping with the next bucket
-        
-                // Assign the boundary values and representative color
-                colorAndRepresentatives[i][0] = endValue; // Bucket size (boundary value)
-                colorAndRepresentatives[i][1] = (startValue + endValue) / 2; // Representative color
-
-
-            // colorAndRepresentatives[i][0] = bucketSize; // Bucket size
-            // colorAndRepresentatives[i][1] = bucketSize * (i + 1) - bucketSize / 2; // Representative
-            if(bucketSize * (i) - bucketSize /2  >= 256){
+            // Calculate the boundary values for the bucket
+            double startValue = i * (256.0 / totalBuckets);
+            double endValue = (i + 1) * (256.0 / totalBuckets) - 1; // Adjusted end value
+    
+            // Round the values to the nearest integer
+            int roundedStartValue = (int) Math.round(startValue);
+            int roundedEndValue = (int) Math.round(endValue);
+            double representativeColor = (roundedStartValue + roundedEndValue) / 2.0;
+    
+            // Assign the boundary values and representative color
+            colorAndRepresentatives[i][0] = roundedEndValue; // Bucket size (boundary value)
+            colorAndRepresentatives[i][1] = representativeColor; // Representative color
+    
+            // Break if the end value exceeds 255
+            if (roundedEndValue >= 256) {
                 break;
             }
-            System.out.println("Bucket size: " + colorAndRepresentatives[i][0]);
+    
+            // Print for debugging
+            System.out.println(i + "-Bucket size: " + colorAndRepresentatives[i][0]);
             System.out.println("Representative: " + colorAndRepresentatives[i][1]);
         }
-        return colorAndRepresentatives;
-    }
     
-    public static int findBucketIndex0(int value, int[][] bucketSizesAndRepresentatives) {
+        return colorAndRepresentatives;
+    }    
+
+    // public static double[][] calculateBucketSizesAndRepresentatives0(int totalBuckets) {
+    //     double[][] colorAndRepresentatives = new double[totalBuckets][2];
+    //     //double bucketSize = Math.round(256.0f / totalBuckets);
+    //     for (int i = 0; i < totalBuckets; i++) {
+    //             // Calculate the boundary values for the bucket
+    //             double startValue = i * (256/totalBuckets);
+    //             double endValue = startValue + (256/totalBuckets); // Subtract 1 to avoid overlapping with the next bucket
+        
+    //             // Assign the boundary values and representative color
+    //             colorAndRepresentatives[i][0] = endValue; // Bucket size (boundary value)
+    //             colorAndRepresentatives[i][1] = (startValue + endValue) / 2; // Representative color
+
+
+    //         // colorAndRepresentatives[i][0] = bucketSize; // Bucket size
+    //         // colorAndRepresentatives[i][1] = bucketSize * (i + 1) - bucketSize / 2; // Representative
+    //         if((256/totalBuckets) * (i) - (256/totalBuckets) /2  >= 256){
+    //             break;
+    //         }
+    //         System.out.println(i+"-Bucket size: " + colorAndRepresentatives[i][0]);
+    //         System.out.println("Representative: " + colorAndRepresentatives[i][1]);
+    //     }
+    //     return colorAndRepresentatives;
+    // }
+    
+    public static int findBucketIndex0(int value, double[][] bucketSizesAndRepresentatives) {
         int index = 0;
         // Find the bucket index where the value falls
         while (index < bucketSizesAndRepresentatives.length && value > bucketSizesAndRepresentatives[index][0]) {
