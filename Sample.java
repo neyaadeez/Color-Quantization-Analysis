@@ -1,8 +1,6 @@
 import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
-import java.text.DecimalFormat;
-
 import javax.swing.*;
 
 
@@ -98,9 +96,9 @@ public class Sample {
 		// }
 
         // Determine bucket sizes and representative colors for each channel
-        int[][] bucketSizesAndRepresentativesR = calculateBucketSizesAndRepresentatives(histogram, 0, bucketSize);
-        int[][] bucketSizesAndRepresentativesG = calculateBucketSizesAndRepresentatives(histogram, 1, bucketSize);
-        int[][] bucketSizesAndRepresentativesB = calculateBucketSizesAndRepresentatives(histogram, 2, bucketSize);
+        int[][] bucketSizesRepR = BucketSizesRep(histogram, 0, bucketSize);
+        int[][] bucketSizesRepG = BucketSizesRep(histogram, 1, bucketSize);
+        int[][] bucketSizesRepB = BucketSizesRep(histogram, 2, bucketSize);
 
         // Quantize each pixel
         for (int y = 0; y < height; y++) {
@@ -111,15 +109,15 @@ public class Sample {
                 int b = rgb & 0xFF;
 
                 // Find the bucket index and representative color for each channel
-                int bucketIndexR = findBucketIndex(r, bucketSizesAndRepresentativesR);
-                int bucketIndexG = findBucketIndex(g, bucketSizesAndRepresentativesG);
-                int bucketIndexB = findBucketIndex(b, bucketSizesAndRepresentativesB);
+                int bucketIndexR = findBucketIndex(r, bucketSizesRepR);
+                int bucketIndexG = findBucketIndex(g, bucketSizesRepG);
+                int bucketIndexB = findBucketIndex(b, bucketSizesRepB);
                 
 
                 // Combine channels
-                int quantizedRGB = (r == 0 ? 0: (bucketSizesAndRepresentativesR[bucketIndexR][1] << 16)) |
-                                   (g == 0 ? 0: (bucketSizesAndRepresentativesG[bucketIndexG][1] << 8)) |
-                                   (b == 0 ? 0: (bucketSizesAndRepresentativesB[bucketIndexB][1]));
+                int quantizedRGB = (r == 0 ? 0: (bucketSizesRepR[bucketIndexR][1] << 16)) |
+                                   (g == 0 ? 0: (bucketSizesRepG[bucketIndexG][1] << 8)) |
+                                   (b == 0 ? 0: (bucketSizesRepB[bucketIndexB][1]));
                 
 
                 quantizedImage.setRGB(x, y, quantizedRGB);
@@ -129,8 +127,8 @@ public class Sample {
         return quantizedImage;
     }
 
-	public static int[][] calculateBucketSizesAndRepresentatives(int[][] histogram, int channel, int totalBuckets) {
-        int[][] bucketSizesAndRepresentatives = new int[totalBuckets][2];
+	public static int[][] BucketSizesRep(int[][] histogram, int channel, int totalBuckets) {
+        int[][] bucketSizesRep = new int[totalBuckets][2];
     
         // Calculate total pixel count and initialize variables
         int totalPixels = 0;
@@ -150,8 +148,8 @@ public class Sample {
             if (currentSize + count > targetSize && currentBucket < totalBuckets) {
                 // Calculate representative color (handle empty bucket case)
                 int representativeColor = currentSize == 0 ? i : currentBucketSum / currentSize;
-                bucketSizesAndRepresentatives[currentBucket][0] = i - (overshoot ? 1 : 0);
-                bucketSizesAndRepresentatives[currentBucket][1] = representativeColor;
+                bucketSizesRep[currentBucket][0] = i - (overshoot ? 1 : 0);
+                bucketSizesRep[currentBucket][1] = representativeColor;
                 currentBucket++;
                 currentSize = count;
                 currentBucketSum = count * i;
@@ -164,29 +162,29 @@ public class Sample {
     
             // Fill the last bucket even if it doesn't reach target size
             if (i == 255 && currentBucket < totalBuckets - 1) {
-                bucketSizesAndRepresentatives[currentBucket][0] = 255 - (overshoot ? 1 : 0);
-                bucketSizesAndRepresentatives[currentBucket][1] = currentSize == 0 ? 255 : currentBucketSum / currentSize;
+                bucketSizesRep[currentBucket][0] = 255 - (overshoot ? 1 : 0);
+                bucketSizesRep[currentBucket][1] = currentSize == 0 ? 255 : currentBucketSum / currentSize;
                 currentBucket++;
             }
         }
     
-        return bucketSizesAndRepresentatives;
+        return bucketSizesRep;
     }
     
     
 
-	public static int findBucketIndex(int value, int[][] bucketSizesAndRepresentatives) {
+	public static int findBucketIndex(int value, int[][] bucketSizesRep) {
 		int index = 0;
 		// Find the bucket index where the value falls
-		while (index < bucketSizesAndRepresentatives.length && value > bucketSizesAndRepresentatives[index][0]) {
+		while (index < bucketSizesRep.length && value > bucketSizesRep[index][0]) {
 			index++;
 		}
 		// Adjust index to ensure it's within bounds
-		return Math.min(index, bucketSizesAndRepresentatives.length - 1);
+		return Math.min(index, bucketSizesRep.length - 1);
 	}
 	
 
-    public static BufferedImage quantizeImage(int quantizationMode, BufferedImage originalImage, int totalBuckets) {
+    public static BufferedImage UniformQuantizeImage(BufferedImage originalImage, int totalBuckets) {
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
         BufferedImage quantizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -196,7 +194,7 @@ public class Sample {
         // System.out.println(totalBuckets+" : "+n);
         // int bucketSize = 256 / n;
 
-        double[][] bucketSizesAndRepresentatives = calculateBucketSizesAndRepresentatives0(n);
+        double[][] bucketSizesRep = calculateBucketSizesAndRepresentatives0(n);
 
         // Quantize each pixel
         for (int y = 0; y < height; y++) {
@@ -206,32 +204,14 @@ public class Sample {
                 int g = (rgb >> 8) & 0xFF;
                 int b = rgb & 0xFF;
 
-                // Quantize each channel
-                // int quantizedR = (r / bucketSize) * bucketSize + bucketSize / 2;
-                // int quantizedG = (g / bucketSize) * bucketSize + bucketSize / 2;
-                // int quantizedB = (b / bucketSize) * bucketSize + bucketSize / 2;
-                // int bucketIndexR = findBucketIndex0(r, bucketSizesAndRepresentatives);
-                // int bucketIndexG = findBucketIndex0(g, bucketSizesAndRepresentatives);
-                // int bucketIndexB = findBucketIndex0(b, bucketSizesAndRepresentatives);
-
-
-
-                // // Combine channels
-                // // int quantizedRGB = (quantizedR << 16) | (quantizedG << 8) | quantizedB;
-
-                // int quantizedRGB = (r == 0 ? 0: (bucketSizesAndRepresentatives[bucketIndexR][1] << 16)) |
-                //                    (g == 0 ? 0: (bucketSizesAndRepresentatives[bucketIndexG][1] << 8)) |
-                //                    (b == 0 ? 0: (bucketSizesAndRepresentatives[bucketIndexB][1]));
-                
-
-                int bucketIndexR = findBucketIndex0(r, bucketSizesAndRepresentatives);
-                int bucketIndexG = findBucketIndex0(g, bucketSizesAndRepresentatives);
-                int bucketIndexB = findBucketIndex0(b, bucketSizesAndRepresentatives);
+                int bucketIndexR = findBucketIndex0(r, bucketSizesRep);
+                int bucketIndexG = findBucketIndex0(g, bucketSizesRep);
+                int bucketIndexB = findBucketIndex0(b, bucketSizesRep);
     
-                // Retrieve representative values from the bucketSizesAndRepresentatives array
-                int quantizedR = (int)bucketSizesAndRepresentatives[bucketIndexR][1];
-                int quantizedG = (int)bucketSizesAndRepresentatives[bucketIndexG][1];
-                int quantizedB = (int)bucketSizesAndRepresentatives[bucketIndexB][1];
+                // Retrieve representative values from the bucketSizesRep array
+                int quantizedR = (int)bucketSizesRep[bucketIndexR][1];
+                int quantizedG = (int)bucketSizesRep[bucketIndexG][1];
+                int quantizedB = (int)bucketSizesRep[bucketIndexB][1];
     
                 // Combine channels
                 int quantizedRGB = (quantizedR << 16) | (quantizedG << 8) | quantizedB;
@@ -273,39 +253,15 @@ public class Sample {
     
         return colorAndRepresentatives;
     }    
-
-    // public static double[][] calculateBucketSizesAndRepresentatives0(int totalBuckets) {
-    //     double[][] colorAndRepresentatives = new double[totalBuckets][2];
-    //     //double bucketSize = Math.round(256.0f / totalBuckets);
-    //     for (int i = 0; i < totalBuckets; i++) {
-    //             // Calculate the boundary values for the bucket
-    //             double startValue = i * (256/totalBuckets);
-    //             double endValue = startValue + (256/totalBuckets); // Subtract 1 to avoid overlapping with the next bucket
-        
-    //             // Assign the boundary values and representative color
-    //             colorAndRepresentatives[i][0] = endValue; // Bucket size (boundary value)
-    //             colorAndRepresentatives[i][1] = (startValue + endValue) / 2; // Representative color
-
-
-    //         // colorAndRepresentatives[i][0] = bucketSize; // Bucket size
-    //         // colorAndRepresentatives[i][1] = bucketSize * (i + 1) - bucketSize / 2; // Representative
-    //         if((256/totalBuckets) * (i) - (256/totalBuckets) /2  >= 256){
-    //             break;
-    //         }
-    //         System.out.println(i+"-Bucket size: " + colorAndRepresentatives[i][0]);
-    //         System.out.println("Representative: " + colorAndRepresentatives[i][1]);
-    //     }
-    //     return colorAndRepresentatives;
-    // }
     
-    public static int findBucketIndex0(int value, double[][] bucketSizesAndRepresentatives) {
+    public static int findBucketIndex0(int value, double[][] bucketSizesRep) {
         int index = 0;
         // Find the bucket index where the value falls
-        while (index < bucketSizesAndRepresentatives.length && value > bucketSizesAndRepresentatives[index][0]) {
+        while (index < bucketSizesRep.length && value > bucketSizesRep[index][0]) {
             index++;
         }
         // Adjust index to ensure it's within bounds
-        return Math.min(index, bucketSizesAndRepresentatives.length - 1);
+        return Math.min(index, bucketSizesRep.length - 1);
     }
     
     
@@ -348,11 +304,10 @@ public class Sample {
             }
         }
 
-        // System.out.println("errorR: "+errrorR);
-        // System.out.println("errorG: "+errrorG);
-        // System.out.println("errorB: "+errrorB);
+        System.out.println("errorR: "+errrorR);
+        System.out.println("errorG: "+errrorG);
+        System.out.println("errorB: "+errrorB);
 
-        // Normalize absolute error by the number of pixels and channels
         return totalError;
     }
 
@@ -371,23 +326,8 @@ public class Sample {
 
         int quantizationMode = Integer.parseInt(args[1]);
         int numberOfBuckets = Integer.parseInt(args[2]);
-        BufferedImage quantizedImg = quantizeImage(quantizationMode, imgOne, numberOfBuckets);
 
-		BufferedImage nonUni = nonUniformQuantizeImage(imgOne, numberOfBuckets);
-        // DecimalFormat numberFormat = new DecimalFormat("#.00");
-
-        // for(int i = 0; i<256; i++){
-        //     int colors = (int)Math.pow(i+1, 3);
-        //     BufferedImage m1 = quantizeImage(quantizationMode, imgOne, colors);
-        //     // BufferedImage m2 = nonUniformQuantizeImage(imgOne, colors);
-        //     System.out.println(calculateAbsoluteError(imgOne, m1));
-        //     // System.out.println(colors+": non-uniform -> "+numberFormat.format(calculateAbsoluteError(imgOne, m2)));
-        // }
-		System.out.println(calculateAbsoluteError(imgOne, quantizedImg));
-        // System.out.println(calculateAbsoluteError(imgOne, nonUni));
-
-		lbIm1 = new JLabel(new ImageIcon(quantizedImg));
-		lbIm2 = new JLabel(new ImageIcon(nonUni));
+        BufferedImage quantizedImg;
 
 
 		GridBagConstraints c = new GridBagConstraints();
@@ -400,21 +340,29 @@ public class Sample {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 0;
 		c.gridy = 1;
-		// frame.getContentPane().add(lbIm1, c);
-        frame.getContentPane().add(createHeaderPanel("Uniform Quantization", lbIm1), c);
 
-
+        switch (quantizationMode) {
+            case 1:
+                quantizedImg = UniformQuantizeImage(imgOne, numberOfBuckets);
+                lbIm1 = new JLabel(new ImageIcon(quantizedImg));
+                frame.getContentPane().add(createHeaderPanel("Uniform Quantization", lbIm1), c);
+                System.out.println("Total Error: "+calculateAbsoluteError(imgOne, quantizedImg));
+                break;
+            case 2:
+                quantizedImg = nonUniformQuantizeImage(imgOne, numberOfBuckets);
+                lbIm1 = new JLabel(new ImageIcon(quantizedImg));
+                frame.getContentPane().add(createHeaderPanel("Non - Uniform Quantization", lbIm1), c);
+                System.out.println("Total Error: "+calculateAbsoluteError(imgOne, quantizedImg));
+                break;
+    
+            default:
+                System.out.println("wrong mode selection");
+                break;
+        }
+        
 		frame.pack();
 		frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
-		// frame2.getContentPane().add(lbIm2, c);
-        frame2.getContentPane().add(createHeaderPanel("Non-Uniform Quantization", lbIm2), c);
-
-
-		frame2.pack();
-		frame2.setVisible(true);
-        frame2.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
     private static JPanel createHeaderPanel(String headerText, JLabel contentLabel) {
         JPanel panel = new JPanel(new BorderLayout());
