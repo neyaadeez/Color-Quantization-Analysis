@@ -31,9 +31,9 @@ YourProgram.exe Image.rgb 2 27
 
 ## Implementation Details
 
-- **Mode 1 (Uniform Quantization):** Divides each channel into equally spaced square root of B buckets, where B is the total number of buckets provided. The mid-point of each range is taken as the representative color for all pixels in that bucket.
+- **Mode 1 (Uniform Quantization):** Divides each channel into equally spaced cube root of B buckets, where B is the total number of colors provided. The mid-point of each range is taken as the representative color for all pixels in that bucket.
 
-- **Mode 2 (Non-Uniform Quantization):** Divides each channel into square root of B buckets, where bucket spacing is dynamically assigned based on the distribution of pixel values in each channel. Smaller ranged buckets are assigned to values that occur more often to reduce overall error. The representative color for each pixel is set as the average value of each color in the bucket it belongs to.
+- **Mode 2 (Non-Uniform Quantization):** Divides each channel into cube root of B buckets, where bucket spacing is dynamically assigned based on the distribution of pixel values in each channel. Smaller ranged buckets are assigned to values that occur more often to reduce overall error. The representative color for each pixel is set as the average value of each color in the bucket it belongs to.
 
 ## Note
 - The provided image is assumed to be of size 512x512.
