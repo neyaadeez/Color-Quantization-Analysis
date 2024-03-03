@@ -3,13 +3,9 @@ import java.awt.image.*;
 import java.io.*;
 import java.text.DecimalFormat;
 
-import javax.swing.*;
 
+public class SampleAutomate {
 
-public class Sample {
-
-	JFrame frame, frame2;
-	JLabel lbIm1, lbIm2;
 	BufferedImage imgOne;
 
 	// Modify the height and width values here to read and display an image with
@@ -87,15 +83,18 @@ public class Sample {
 				histogram[2][b]++;
             }
         }
-		// for(int i=0; i<histogram[0].length; i++){
-		// 	System.out.println(i+": "+histogram[0][i]);
+		// for(int i=0; i<256; i++){
+		// 	System.out.println(histogram[0][i]);
 		// }
+        // System.out.println("--------------------------endofR--------");
         // for(int i=0; i<histogram[1].length; i++){
-		// 	System.out.println(i+": "+histogram[1][i]);
+		// 	System.out.println(histogram[1][i]);
 		// }
+        // System.out.println("---------------------endofG----------");
         // for(int i=0; i<histogram[2].length; i++){
-		// 	System.out.println(i+": "+histogram[2][i]);
+		// 	System.out.println(histogram[2][i]);
 		// }
+        // System.out.println("-------------------endofB--------");
 
         // Determine bucket sizes and representative colors for each channel
         int[][] bucketSizesAndRepresentativesR = calculateBucketSizesAndRepresentatives(histogram, 0, bucketSize);
@@ -186,7 +185,7 @@ public class Sample {
 	}
 	
 
-    public static BufferedImage quantizeImage(int quantizationMode, BufferedImage originalImage, int totalBuckets) {
+    public static BufferedImage quantizeImage(BufferedImage originalImage, int totalBuckets) {
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
         BufferedImage quantizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -363,17 +362,28 @@ public class Sample {
 		readImageRGB(width, height, args[0], imgOne);
 
 		// Use label to display the image
-		frame = new JFrame();
-		frame2 = new JFrame();
-		GridBagLayout gLayout = new GridBagLayout();
-		frame.getContentPane().setLayout(gLayout);
-		frame2.getContentPane().setLayout(gLayout);
 
         int quantizationMode = Integer.parseInt(args[1]);
         int numberOfBuckets = Integer.parseInt(args[2]);
-        BufferedImage quantizedImg = quantizeImage(quantizationMode, imgOne, numberOfBuckets);
+        BufferedImage quantizedImg;
 
-		BufferedImage nonUni = nonUniformQuantizeImage(imgOne, numberOfBuckets);
+        switch (quantizationMode) {
+            case 1:
+                quantizedImg = quantizeImage(imgOne, numberOfBuckets);
+                System.out.println(calculateAbsoluteError(imgOne, quantizedImg));
+                break;
+            case 2:
+                quantizedImg = nonUniformQuantizeImage(imgOne, numberOfBuckets);
+                System.out.println(calculateAbsoluteError(imgOne, quantizedImg));
+                break;
+        
+            default:
+                System.out.println("wrong mode selection");
+                break;
+        }
+
+
+		// BufferedImage nonUni = nonUniformQuantizeImage(imgOne, numberOfBuckets);
         // DecimalFormat numberFormat = new DecimalFormat("#.00");
 
         // for(int i = 0; i<256; i++){
@@ -383,50 +393,12 @@ public class Sample {
         //     System.out.println(calculateAbsoluteError(imgOne, m1));
         //     // System.out.println(colors+": non-uniform -> "+numberFormat.format(calculateAbsoluteError(imgOne, m2)));
         // }
-		System.out.println(calculateAbsoluteError(imgOne, quantizedImg));
         // System.out.println(calculateAbsoluteError(imgOne, nonUni));
 
-		lbIm1 = new JLabel(new ImageIcon(quantizedImg));
-		lbIm2 = new JLabel(new ImageIcon(nonUni));
-
-
-		GridBagConstraints c = new GridBagConstraints();
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.anchor = GridBagConstraints.CENTER;
-		c.weightx = 0.5;
-		c.gridx = 0;
-		c.gridy = 0;
-
-		c.fill = GridBagConstraints.HORIZONTAL;
-		c.gridx = 0;
-		c.gridy = 1;
-		// frame.getContentPane().add(lbIm1, c);
-        frame.getContentPane().add(createHeaderPanel("Uniform Quantization", lbIm1), c);
-
-
-		frame.pack();
-		frame.setVisible(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
-		// frame2.getContentPane().add(lbIm2, c);
-        frame2.getContentPane().add(createHeaderPanel("Non-Uniform Quantization", lbIm2), c);
-
-
-		frame2.pack();
-		frame2.setVisible(true);
-        frame2.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	}
-    private static JPanel createHeaderPanel(String headerText, JLabel contentLabel) {
-        JPanel panel = new JPanel(new BorderLayout());
-        JLabel headerLabel = new JLabel(headerText);
-        headerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        panel.add(headerLabel, BorderLayout.NORTH);
-        panel.add(contentLabel, BorderLayout.CENTER);
-        return panel;
     }
 
 	public static void main(String[] args) {
-		Sample ren = new Sample();
+		SampleAutomate ren = new SampleAutomate();
 		ren.showIms(args);
 	}
 
